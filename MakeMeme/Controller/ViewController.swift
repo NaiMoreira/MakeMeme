@@ -25,9 +25,14 @@ class ViewController: UIViewController {
     @IBOutlet weak var navBar: UINavigationBar!
     @IBOutlet weak var toolBar: UIToolbar!
     
+    var meme = Memes(topText: "TOP", bottomText: "BOTTOM", originalImage: UIImage(), memedImage: UIImage())
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        topTextField.text = meme.topText
+        bottomTextField.text = meme.bottomText
+        imageView.image = meme.originalImage
         
         topTextField.delegate = textFieldDelegate
         bottomTextField.delegate = textFieldDelegate
@@ -39,11 +44,15 @@ class ViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
+        if imageView.image == nil {
+            activityButton.isEnabled = false
+        }
+        
         topTextField.textAlignment = .center
         bottomTextField.textAlignment = .center
-        activityButton.isEnabled = false
         cameraButton.isEnabled = UIImagePickerController.isSourceTypeAvailable(.camera)
         subscribeToKeyboardNotifications()
+        
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -76,9 +85,11 @@ class ViewController: UIViewController {
             (activity, success, items, error) in
             if(error != nil){
                 print(error as Any)
-            }
-            else {
+            } else if !success {
+                self.dismiss(animated: true, completion: nil)
+            }  else {
                 self.SaveMeme(memeImg: memedImage)
+                self.navigationController?.popToRootViewController(animated: true)
             }
         }
     }
@@ -92,6 +103,7 @@ class ViewController: UIViewController {
         bottomTextField.defaultTextAttributes = textFieldDelegate.textFieldatributtes
         topTextField.textAlignment = .center
         bottomTextField.textAlignment = .center
+        self.navigationController?.popToRootViewController(animated: true)
     }
     
     @IBAction func changeFontPressed(_ sender: UIBarButtonItem) {
@@ -105,8 +117,12 @@ class ViewController: UIViewController {
     
     func SaveMeme(memeImg: UIImage) {
         if let topText = topTextField.text, let bottomText = bottomTextField.text, let originalImage = imageView.image {
-            
-            _ = MemeModel(topText: topText, bottomText: bottomText, originalImage: originalImage, memedImage: memeImg)}
+            meme.topText = topText
+            meme.bottomText = bottomText
+            meme.originalImage = originalImage
+            meme.memedImage = memeImg
+            (UIApplication.shared.delegate as! AppDelegate).memes.append(meme)
+        }
     }
     
     func generateMemedImage() -> UIImage {
